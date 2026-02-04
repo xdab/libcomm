@@ -1,11 +1,11 @@
-# .clinerules - Technical Rules for libtnc
+# .clinerules - Technical Rules for libcomm
 
-TNC protocol library for AX.25 packet radio. Provides AX.25/KISS/TNC2/HDLC/CRC encoding and decoding, plus TCP/UDP networking, Unix Domain Socket IPC and line parsing.
+Networking and IPC utilities library aimed at reducing boilerplate code across simple projects. Provides TCP/UDP networking, Unix Domain Socket IPC, epoll-based polling and buffer utilities.
 
 ## Code Style
 
 - **Minimal comments**—self-explanatory code preferred
-- **Function prefixes** group related functionality: `ax25_`, `hldc_`, `kiss_`, `tnc2_`, `crc_`, `tcp_`, `udp_`, `uds_`, `socket_`, `line_`, `buf_`/`fbuf_`
+- **Function prefixes** group related functionality: `tcp_`, `udp_`, `uds_`, `socket_`, `buf_`/`fbuf_`, `socket_poller_`
 - **Struct-based organization** with `init()`, `process()`, `free()` pattern
 - **Buffer safety**: Always pass buffer size, verify available capacity before writes
 - **Error codes**: 0 = success, negative = error
@@ -13,32 +13,28 @@ TNC protocol library for AX.25 packet radio. Provides AX.25/KISS/TNC2/HDLC/CRC e
 
 ## Module Breakdown
 
-### Protocols
+### Networking
 
-- `ax25_addr_*` / `ax25_packet_*`: AX.25 (7-byte addresses: 6-char callsign, SSID, repeat flag)
-- `hldc_framer_*` / `hldc_deframer_*`: HDLC framing (NRZI, bit stuffing, CRC-CCITT 0xFFFF, 0x7E flags)
-- `tnc2_*`: TNC2 text format parsing
-- `kiss_*`: KISS binary protocol with escape sequences
-- `crc_ccitt_*`: CRC-CCITT checksums
+- **`tcp_*`**: TCP client/server with connection management and event callbacks
+  - `tcp_server_*`: Listen socket, client array (max 16), connect/disconnect callbacks
+  - `tcp_client_*`: Connect to remote, send/receive with timeout
+
+- **`udp_*`**: Connectionless packet I/O
+  - `udp_sender_*`: Send to specific destination
+  - `udp_server_*`: Bind to port, receive from any source
+
+### IPC
+
+- **`uds_*`**: Unix Domain Sockets for local inter-process communication
+  - `uds_server_*` / `uds_client_*`: Stream sockets (connected, reliable)
+  - `uds_dgram_*`: Datagram sockets (connectionless, unconnected)
 
 ### Core
 
-- `buf_*` / `fbuf_*`: Buffer capacity/size checks
-- `line_*`: Line parsing from stdin/TCP/UDS
-- `tcp_*`: TCP server (`tcp_server_*`) and client (`tcp_client_*`) with callbacks
-- `udp_*`: UDP sender (`udp_sender_*`) and server (`udp_server_*`)
-- `uds_*`: Unix domain socket client/server (stream)
-- `uds_dgram_*`: Unix domain socket datagram (connectionless)
-- `socket_*`: Socket utilities (bind, nonblocking, etc.)
-- `poller_*`: epoll-based multi-FD polling (`socket_poller_*`)
-- `common_*`: Logging macros and utilities
-
-## Protocol Details
-
-**AX.25**: 7-byte addresses (6-char space-padded callsign + 4-bit SSID + repeat flag)
-**HDLC**: NRZI encode → bit-stuff (insert 0 after five 1s) → CRC-CCITT → 0x7E delimiters
-**KISS**: PORT + COMMAND + data bytes, 0xC0 frame delimiters, 0xDB escape
-**TNC2**: Human-readable (e.g., STATION>DEST,PATH:DATA)
+- **`socket_poller_*`**: epoll-based multi-FD polling for efficient I/O multiplexing
+- **`buf_*` / `fbuf_*`**: Buffer capacity/size checks for byte and float buffers
+- **`socket_*`**: Low-level socket utilities (nonblocking, bind, select)
+- **`common_*`**: Logging macros and utilities
 
 ## Logging
 
@@ -54,7 +50,7 @@ Messages: lowercase start, no period/newline (auto-added).
 
 ## Build
 
-**Library**: `libtnc.a` (static)
+**Library**: `libcomm.a` (static)
 
 **Makefile targets**: `build`, `release`, `test`, `install`, `clean`, `echo`
 
@@ -68,4 +64,4 @@ Messages: lowercase start, no period/newline (auto-added).
 
 ## Using in real projects
 
-Refer to snippets in `README.md` as well as a demo echo server in `src/libtnc_echo.c`.
+Refer to snippets in `README.md` as well as a demo echo server in `src/main_echo.c`.

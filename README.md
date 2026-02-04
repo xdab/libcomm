@@ -1,20 +1,13 @@
-# libtnc
+# libcomm
 
-TNC-related utilities library for AX.25 packet radio.
-Contains utilities both intended for use **in** a TNC program as well as others **interfacing** with a TNC.
+Networking and IPC utilities library aimed at reducing boilerplate code across simple projects.
 
 ## Features
 
-- **AX.25**: Packet and address structs and basic functions
-- **HDLC**: Framing and deframing with NRZI, bit stuffing, checksums
-- **KISS**: Binary protocol for TNC communication similar to SLIP
-- **TNC2**: Human-readable packet representation (STATION>DEST,PATH:DATA)
-- **CRC-CCITT**: 16-bit CRC calculation
 - **TCP**: Client and server support with event callbacks
 - **UDP**: Sender and server (connectionless packet I/O)
 - **Unix Domain Sockets**: Local inter-process communication (stream and datagram)
 - **Socket Poller**: epoll-based multi-FD polling for efficient I/O multiplexing
-- **Line parsing**: Buffered line reader with callback
 
 ## Build
 
@@ -28,51 +21,6 @@ make echo     # Runs demo echo server
 ```
 
 ## Usage
-
-```c
-ax25_packet_t packet;
-ax25_packet_init(&packet);
-ax25_addr_init_with(&packet.destination, "NOCALL", 0, false);
-ax25_addr_init_with(&packet.source, "MYCALL", 1, false);
-packet.control = 0x03;  // UI frame
-packet.protocol = 0xf0;  // No layer 3
-packet.info_len = 5;
-memcpy(packet.info, "HELLO", 5);
-
-buffer_t tnc2_buf;
-buffer_init(&tnc2_buf, tnc2_out, sizeof(tnc2_out));
-tnc2_packet_to_string(&packet, &tnc2_buf);
-
-kiss_message_t kiss;
-kiss_encode(&kiss, kiss_out, sizeof(kiss_out));
-
-hldc_framer_t framer;
-hldc_framer_init(&framer, 16, 16);  // 16 flag bytes pre/postamble
-hldc_framer_process(&framer, &kiss_buf, &hdlc_out, NULL);
-
-crc_ccitt_t crc;
-crc_ccitt_init(&crc);
-crc_ccitt_update_buffer(&crc, data, len);
-uint16_t checksum = crc_ccitt_get(&crc);
-```
-
-### Receiving
-
-```c
-hldc_deframer_t deframer;
-hldc_deframer_init(&deframer);
-
-for (int i = 0; i < bit_count; i++) {
-    hldc_deframer_process(&deframer, bits[i], &frame_buf, NULL);
-}
-
-kiss_decoder_t decoder;
-kiss_decoder_init(&decoder);
-kiss_decoder_process(&decoder, byte, &kiss_msg);
-
-ax25_packet_t packet;
-ax25_packet_unpack(&packet, &kiss_msg.data_buf);
-```
 
 ### Networking and IPC
 
@@ -93,7 +41,11 @@ udp_sender_send(&sender, &buf);
 udp_server_t udp_srv;
 udp_server_init(&udp_srv, 9000, 50);
 udp_server_listen(&udp_srv, &buf);
+```
 
+### Unix IPC
+
+```c
 uds_server_t uds_srv;
 uds_server_init(&uds_srv, "/tmp/my.sock", 50);
 uds_server_listen(&uds_srv, &buf);
@@ -105,10 +57,6 @@ uds_dgram_sender_send(&uds_snd, &buf);
 uds_dgram_server_t uds_dgram_srv;
 uds_dgram_server_init(&uds_dgram_srv, "/tmp/dgram.sock", 50);
 uds_dgram_server_listen(&uds_dgram_srv, &buf);
-
-line_reader_t lr;
-line_reader_init(&lr, my_line_callback);
-line_reader_process(&lr, ch);
 ```
 
 ### Multi-Socket Polling
@@ -140,5 +88,4 @@ See `src/libtnc_echo.c` for a complete multi-protocol echo server demonstrating 
 
 ## Dependencies
 
-- POSIX headers (pthread, socket, etc.)
 - Standard C library

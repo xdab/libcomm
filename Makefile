@@ -13,7 +13,7 @@ release:
 	cd build && make
 
 test: build
-	./build/tnc_test
+	./build/comm_test
 
 install: release
 	cd build && sudo make install
@@ -22,4 +22,4 @@ clean:
 	rm -rf build
 
 echo: build
-	./build/libtnc_echo
+	./build/comm_echo
