@@ -5,8 +5,6 @@ set(CMAKE_C_STANDARD 11)
 include(GNUInstallDirs)
 
 set(COMM_SOURCES
-    src/buffer.c
-    src/common.c
     src/tcp.c
     src/udp.c
     src/uds.c
