@@ -4,10 +4,20 @@
 #include "test_uds.h"
 #include "test_uds_dgram.h"
 #include "test_poller.h"
+#include "test_net.h"
 
 int main(void)
 {
     begin_suite();
+
+    begin_module("Net");
+    test_net_resolve_localhost();
+    test_net_resolve_numeric_ip();
+    test_net_resolve_empty_address();
+    test_net_resolve_unresolvable();
+    test_net_resolve_invalid_format();
+    test_net_resolve_too_long();
+    end_module();
 
     begin_module("TCP");
     test_tcp_server_init_valid();

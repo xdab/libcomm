@@ -2,6 +2,7 @@
 #include "common.h"
 #include "buffer.h"
 #include "socket.h"
+#include "net.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -11,6 +12,16 @@
 #include <arpa/inet.h>
 #include <errno.h>
 
+static void udp_sender_log_initialized(struct sockaddr_in *addr, const char *host, int port)
+{
+    char ipbuf[INET_ADDRSTRLEN];
+    inet_ntop(AF_INET, &addr->sin_addr, ipbuf, sizeof(ipbuf));
+    if (strcmp(ipbuf, host) != 0)
+        LOG("udp sender initialized for %s (%s):%d", host, ipbuf, port);
+    else
+        LOG("udp sender initialized for %s:%d", host, port);
+}
+
 int udp_sender_init(udp_sender_t *sender, const char *addr, int port)
 {
     nonnull(sender, "sender");
@@ -18,10 +29,9 @@ int udp_sender_init(udp_sender_t *sender, const char *addr, int port)
     EXITIF(port < 0, -1, "port must be positive");
     EXITIF(port > 65535, -1, "port must be less than 65536");
 
-    size_t addr_len = strlen(addr);
-    if (addr_len == 0 || addr_len >= INET_ADDRSTRLEN)
+    if (strlen(addr) == 0)
     {
-        LOG("invalid address length: %s", addr);
+        LOG("invalid empty address");
         return -1;
     }
 
@@ -34,13 +44,8 @@ int udp_sender_init(udp_sender_t *sender, const char *addr, int port)
         return -1;
     }
 
-    memset(&sender->dest_addr, 0, sizeof(sender->dest_addr));
-    sender->dest_addr.sin_family = AF_INET;
-    sender->dest_addr.sin_port = htons(port);
-
-    if (inet_pton(AF_INET, addr, &sender->dest_addr.sin_addr) <= 0)
+    if (net_resolve(addr, port, &sender->dest_addr) < 0)
     {
-        LOG("invalid address: %s", addr);
         close(sender->fd);
         return -1;
     }
@@ -57,7 +62,7 @@ int udp_sender_init(udp_sender_t *sender, const char *addr, int port)
         }
     }
 
-    LOG("udp sender initialized for %s:%d", addr, port);
+    udp_sender_log_initialized(&sender->dest_addr, addr, port);
     return 0;
 }
 

@@ -2,6 +2,7 @@
 #include "common.h"
 #include "buffer.h"
 #include "socket.h"
+#include "net.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -12,6 +13,16 @@
 #include <netinet/tcp.h>
 #include <arpa/inet.h>
 #include <errno.h>
+
+static void tcp_client_log_connected(struct sockaddr_in *addr, const char *host, int port)
+{
+    char ipbuf[INET_ADDRSTRLEN];
+    inet_ntop(AF_INET, &addr->sin_addr, ipbuf, sizeof(ipbuf));
+    if (strcmp(ipbuf, host) != 0)
+        LOG("connected to %s (%s):%d", host, ipbuf, port);
+    else
+        LOG("connected to %s:%d", host, port);
+}
 
 int tcp_server_init(tcp_server_t *server, int port, int timeout_ms)
 {
@@ -224,13 +235,8 @@ int tcp_client_init(tcp_client_t *client, const char *addr, int port, int timeou
     }
 
     struct sockaddr_in server_addr;
-    memset(&server_addr, 0, sizeof(server_addr));
-    server_addr.sin_family = AF_INET;
-    server_addr.sin_port = htons(port);
-
-    if (inet_pton(AF_INET, addr, &server_addr.sin_addr) <= 0)
+    if (net_resolve(addr, port, &server_addr) < 0)
     {
-        LOG("invalid address: %s", addr);
         close(client->fd);
         client->fd = -1;
         return -1;
@@ -247,7 +253,7 @@ int tcp_client_init(tcp_client_t *client, const char *addr, int port, int timeou
         }
     }
 
-    LOG("connected to %s:%d", addr, port);
+    tcp_client_log_connected(&server_addr, addr, port);
     return 0;
 }
 

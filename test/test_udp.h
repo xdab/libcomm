@@ -100,26 +100,13 @@ void test_udp_sender_init_invalid_address(void)
 {
     udp_sender_t sender;
 
-    // Empty address
+    // Empty address (handled by net_resolve)
     int result = udp_sender_init(&sender, "", 12345);
     assert_equal_int(result, -1, "empty address rejected");
 
-    // Too long address
-    char long_addr[INET_ADDRSTRLEN + 10];
-    memset(long_addr, '1', sizeof(long_addr) - 1);
-    long_addr[sizeof(long_addr) - 1] = '\0';
-    result = udp_sender_init(&sender, long_addr, 12345);
-    assert_equal_int(result, -1, "too long address rejected");
-
-    // Malformed addresses (inet_pton will reject these)
-    result = udp_sender_init(&sender, "192.168.1", 12345);
-    assert_equal_int(result, -1, "malformed address rejected");
-
-    result = udp_sender_init(&sender, "192.168.abc.1", 12345);
-    assert_equal_int(result, -1, "non-numeric address rejected");
-
-    result = udp_sender_init(&sender, "999.999.999.999", 12345);
-    assert_equal_int(result, -1, "invalid octet values rejected");
+    // Unresolvable hostname (handled by net_resolve)
+    result = udp_sender_init(&sender, "invalid.host.does.not.exist.example", 12345);
+    assert_equal_int(result, -1, "unresolvable hostname rejected");
 }
 
 void test_udp_sender_send_error(void)

@@ -11,6 +11,7 @@ set(COMM_SOURCES
     src/uds_dgram.c
     src/socket.c
     src/poller.c
+    src/net.c
 )
 add_library(comm STATIC ${COMM_SOURCES})
 target_include_directories(comm PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
