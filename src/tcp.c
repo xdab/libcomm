@@ -9,6 +9,7 @@
 #include <sys/socket.h>
 #include <sys/select.h>
 #include <netinet/in.h>
+#include <netinet/tcp.h>
 #include <arpa/inet.h>
 #include <errno.h>
 
@@ -321,4 +322,16 @@ int tcp_client_send(tcp_client_t *client, const buffer_t *buf)
 
     LOGV("sent %zd bytes", sent);
     return (int)sent;
+}
+
+void tcp_client_set_nodelay(tcp_client_t *client, int enable)
+{
+    nonnull(client, "client");
+
+    if (client->fd < 0)
+        return;
+
+    int flag = enable ? 1 : 0;
+    if (setsockopt(client->fd, IPPROTO_TCP, TCP_NODELAY, &flag, sizeof(flag)) < 0)
+        LOGV("setsockopt TCP_NODELAY failed: %s", strerror(errno));
 }

@@ -46,4 +46,6 @@ int tcp_client_listen(tcp_client_t *client, buffer_t *out_buf);
 
 int tcp_client_send(tcp_client_t *client, const buffer_t *buf);
 
+void tcp_client_set_nodelay(tcp_client_t *client, int enable);
+
 #endif
